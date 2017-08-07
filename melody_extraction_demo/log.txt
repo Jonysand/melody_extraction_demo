@@ -1,2 +1,0 @@
-Step 1: Sinusoid_extraction
-a.Equal Loudness Filter(http://replaygain.hydrogenaud.io/proposal/equal_loudness.html)
