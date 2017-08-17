@@ -65,15 +65,16 @@ def Sinusoid_extraction(data, sr):
     # T the sample time distance, usually <= 1/2fh, fh the highest frequency component
     # N the fft window size, better power of 2
     # F = 1 / (len(data) / sr)
-    fh = 8192
+    fh = 22050
     # T = 1 / (2 * fh)
     # N = 1 / (F * T)
-    N = (len(data)/sr) * 2 * fh
+    N = (len(data) / sr) * 2 * fh
     N = int(find_proper_2n(N))
     print N
+
     # Frequency/Amplitude Correction; Short- Time Fourier Transform (STFT)
     # data_stft = librosa.core.stft(y=data, n_fft=N)
-    data_if, data_stft = librosa.ifgram(y=data, n_fft=N)
+    data_if, data_stft = librosa.ifgram(y=data, hop_length=128,win_length=2048, n_fft=8192)
 
     return data_lfiltered, data_stft, data_if
 
@@ -119,7 +120,6 @@ if __name__ == "__main__":
 
     print ("Step 1:Sinusoid Extraction")
     data_lfiltered, data_stft, data_if = Sinusoid_extraction(data, sr)
-    print len(data_if)
 
     print ("Step 2:Salience Function Computation")
     data_SF = Salience_Function(data_if, sr)
