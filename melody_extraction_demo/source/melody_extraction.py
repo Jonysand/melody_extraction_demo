@@ -70,11 +70,11 @@ def Sinusoid_extraction(data, sr):
     # N = 1 / (F * T)
     N = (len(data) / sr) * 2 * fh
     N = int(find_proper_2n(N))
-    print N
+    # print N
 
     # Frequency/Amplitude Correction; Short- Time Fourier Transform (STFT)
     # data_stft = librosa.core.stft(y=data, n_fft=N)
-    data_if, data_stft = librosa.ifgram(y=data, hop_length=128,win_length=2048, n_fft=8192)
+    data_if, data_stft = librosa.ifgram(y=data, hop_length=128, win_length=2048, n_fft=8192)
 
     return data_lfiltered, data_stft, data_if
 
@@ -85,29 +85,44 @@ def B(f):
     return b
 
 
+# Given a bin n, its corresponding frequency f in Hz is calculated as:
+def F(n):
+    i = (n - 1) / 120
+    f = 55 * math.pow(2, i)
+    return f
+
+
 def Salience_Function(data_if, sr):
+    # Nh the number of harmonics considered
     Nh = 20
+    # S the input time frequency magnitude representation
     S = np.abs(data_if)
     freqs = librosa.core.fft_frequencies(sr)
+    print (freqs.shape)
+
+    # with parameters following:
+    # alpha = 0.8; beta = 1; Nh = 20; gamma >= 40 dB
+
+    # harms the harmonics to include in salience computation
     harms = []
     for i in range(Nh):
         harms.append(i + 1)
 
     # calculate weights
-    blist = []
-    for i in range(len(data_if)):
-        blist.append(B(data_if[i]))
     weights = []
-    for h in range(Nh):
-        for i in range(len(data_if)):
-            sita = abs(B(data_if[i] / h) - blist[i]) / 10
-            if sita <= 1:
-                break
-        g = math.cos(sita * math.pi / 2) * math.cos(sita * math.pi / 2) * math.pow(0.8, h - 1)
+    for h in range(1, Nh + 1):
+        for n in range(600):
+            i = n + 1
+            sigma = abs(B(F(n) / h) - n) / 10
+            if sigma <= 1:
+                break;
+        g = math.cos(sigma * math.pi / 2) * math.cos(sigma * math.pi / 2) * math.pow(0.8, h - 1)
         weights.append(g)
-    print "weights list:", weights
 
-    return 0
+    #data_sal = 0
+    data_sal = librosa.salience(S, freqs, harms, weights, fill_value=0)
+
+    return data_sal
 
 
 if __name__ == "__main__":
@@ -120,6 +135,7 @@ if __name__ == "__main__":
 
     print ("Step 1:Sinusoid Extraction")
     data_lfiltered, data_stft, data_if = Sinusoid_extraction(data, sr)
+    print (data_stft.shape)
 
     print ("Step 2:Salience Function Computation")
-    data_SF = Salience_Function(data_if, sr)
+    data_sal = Salience_Function(data_if, sr)
